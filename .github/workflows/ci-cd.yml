@@ -86,7 +86,7 @@ jobs:
 
       # aCoCo report
       - name: Upload JaCoCo report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: '/back/target/site/jacoco'
           name: 'back-end-coverage'
