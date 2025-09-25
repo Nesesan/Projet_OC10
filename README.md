@@ -42,7 +42,7 @@ Launch Back-end:
 
 >  mvn spring-boot:run
 
-Launch the tests:æ
+Launch the tests:
 
 > mvn clean install
 
