@@ -1,0 +1,24 @@
+name: CI/CD Pipeline
+run-name: ${{ github.actor }} is testing out GitHub Actions
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      # checkout
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Front-end
+      - name: Set up Node.js
+        uses: actions/setup-node@v5 #@v5 latest version for setup-node
+        with:
+          node-version: 18
+
+      - name: Confirm Setup
+        run: echo "Checkout and Node.js setup completed"
