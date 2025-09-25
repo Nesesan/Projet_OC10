@@ -44,7 +44,7 @@ jobs:
 
       # Run tests
       - name: Run front-end tests
-        run: npm run test -- --watch=false --code-coverage
+        run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadless
         working-directory: ./front
 
       # Confirm step success
