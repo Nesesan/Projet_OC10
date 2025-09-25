@@ -84,11 +84,15 @@ jobs:
         run: mvn jacoco:report
         working-directory: ./back
 
-      # aCoCo report
+      # If folderExist
+      - name: List JaCoCo folder
+        run: ls -R ./back/target/site/jacoco
+
+      # Upload JaCoCo report
       - name: Upload JaCoCo report
         uses: actions/upload-artifact@v4
         with:
-          path: '/back/target/site/jacoco'
+          path: './back/target/site/jacoco'
           name: 'back-end-coverage'
 
       # Confirm back-end success
