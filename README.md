@@ -26,7 +26,7 @@ Build the container:
 
 Start the container:
 
-> docker run -p 8080:8080 --name bobapp-front -d bobapp-front
+> docker run -p 4200:8080 --name bobapp-front -d bobapp-front
 
 ## Back-end
 
@@ -42,7 +42,7 @@ Launch Back-end:
 
 >  mvn spring-boot:run
 
-Launch the tests:
+Launch the tests:æ
 
 > mvn clean install
 
@@ -54,4 +54,4 @@ Build the container:
 
 Start the container:
 
-> docker run -p 8080:8080 --name bobapp-back -d bobapp-back 
+> docker run -p 8081:8081 --name bobapp-back -d bobapp-back 
