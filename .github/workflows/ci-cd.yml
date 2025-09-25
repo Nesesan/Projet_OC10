@@ -1,24 +1,100 @@
 name: CI/CD Pipeline
-run-name: ${{ github.actor }} is testing out GitHub Actions
+
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
 
 jobs:
-  build-and-test:
+
+  # Front-end job
+  front-end:
     runs-on: ubuntu-latest
     steps:
-      # checkout
+      # Checkout
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Front-end
+      # Node.js setup
       - name: Set up Node.js
-        uses: actions/setup-node@v5 #@v5 latest version for setup-node
+        uses: actions/setup-node@v5
         with:
           node-version: 18
 
+      # Confirm setup
       - name: Confirm Setup
         run: echo "Checkout and Node.js setup completed"
+
+      # Cache Node modules
+      - name: Cache Node modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('front/package-lock.json') }}
+
+      # Install dependencies
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./front
+
+      # Build front-end
+      - name: Build front-end
+        run: npm run build
+        working-directory: ./front
+
+      # Run tests in ChromeHeadless
+      - name: Run front-end tests
+        run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadless
+        working-directory: ./front
+
+      # Confirm front-end success
+      - name: Confirm front-end success
+        run: echo "Front-end build and tests completed"
+
+  # Back-end job
+  back-end:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Java setup
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 11
+
+      # Cache Maven
+      - name: Cache Maven
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-maven-${{ hashFiles('back/pom.xml') }}
+
+      # Build back-end
+      - name: Build back-end
+        run: mvn clean verify
+        working-directory: ./back
+
+      # Generate JaCoCo report
+      - name: Generate JaCoCo report
+        run: mvn jacoco:report
+        working-directory: ./back
+
+      # If folderExist
+      - name: List JaCoCo folder
+        run: ls -R ./back/target/site/jacoco
+
+      # Upload JaCoCo report
+      - name: Upload JaCoCo report
+        uses: actions/upload-artifact@v4
+        with:
+          path: './back/target/site/jacoco'
+          name: 'back-end-coverage'
+
+      # Confirm back-end success
+      - name: Confirm back-end success
+        run: echo "Back-end build, tests, and coverage completed"
