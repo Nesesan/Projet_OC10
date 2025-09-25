@@ -21,4 +21,4 @@ jobs:
           node-version: 18
 
       - name: Confirm Setup
-        uses: echo "Checkout and Node.js setup completed"
+        run: echo "Checkout and Node.js setup completed"
