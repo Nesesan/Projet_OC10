@@ -5,10 +5,13 @@ on:
     branches: [ "main", "develop" ]
   pull_request:
     branches: [ "main", "develop" ]
+  workflow_dispatch: # permet manuellement de déclencher la pipeline
 
 jobs:
 
-  # Front-end job
+  # ================================
+  # ETAPE 1 : Environnement + Build Front-end
+  # ================================
   front-end:
     runs-on: ubuntu-latest
     steps:
@@ -21,10 +24,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 18
-
-      # Confirm setup
-      - name: Confirm Setup
-        run: echo "Checkout and Node.js setup completed"
 
       # Cache Node modules
       - name: Cache Node modules
@@ -43,16 +42,42 @@ jobs:
         run: npm run build
         working-directory: ./front
 
-      # Run tests in ChromeHeadless
+
+  # ================================
+  # ETAPE 2 : Tests + Rapport Front-end
+  # ================================
+  front-end-tests:
+    runs-on: ubuntu-latest
+    needs: front-end
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./front
+
+      # Run tests with coverage
       - name: Run front-end tests
         run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadless
         working-directory: ./front
 
-      # Confirm front-end success
-      - name: Confirm front-end success
-        run: echo "Front-end build and tests completed"
+      # Upload coverage report
+      - name: Upload Front-end coverage
+        uses: actions/upload-artifact@v4
+        with:
+          path: ./front/coverage
+          name: front-end-coverage
 
-  # Back-end job
+
+  # ================================
+  # ETAPE 1 : Environnement + Build Back-end
+  # ================================
   back-end:
     runs-on: ubuntu-latest
     steps:
@@ -79,22 +104,36 @@ jobs:
         run: mvn clean verify
         working-directory: ./back
 
+
+  # ================================
+  # ETAPE 2 : Tests + Rapport Back-end
+  # ================================
+  back-end-tests:
+    runs-on: ubuntu-latest
+    needs: back-end
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 11
+
+      # Run tests (mvn verify already compiles & tests, mais on refait pour bien séparer)
+      - name: Run back-end tests
+        run: mvn test
+        working-directory: ./back
+
       # Generate JaCoCo report
       - name: Generate JaCoCo report
         run: mvn jacoco:report
         working-directory: ./back
 
-      # If folderExist
-      - name: List JaCoCo folder
-        run: ls -R ./back/target/site/jacoco
-
       # Upload JaCoCo report
       - name: Upload JaCoCo report
         uses: actions/upload-artifact@v4
         with:
-          path: './back/target/site/jacoco'
-          name: 'back-end-coverage'
-
-      # Confirm back-end success
-      - name: Confirm back-end success
-        run: echo "Back-end build, tests, and coverage completed"
+          path: ./back/target/site/jacoco
+          name: back-end-coverage
