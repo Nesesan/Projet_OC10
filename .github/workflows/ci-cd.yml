@@ -170,7 +170,10 @@ jobs:
           - name: Run SonarCloud Scan
             env:
               SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-            run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-              -Dsonar.projectKey=Nesesan_Projet_OC10 \
-              -Dsonar.organization=nesesan \
-              -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+            run: |
+              cd back
+              mvn clean verify sonar:sonar \
+                -Dsonar.projectKey=Nesesan_Projet_OC10 \
+                -Dsonar.organization=nesesan \
+                -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+          
