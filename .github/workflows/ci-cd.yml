@@ -120,24 +120,22 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Java pour le back
-      - name: Set up JDK 11
+      - name: Set up Java 11
         uses: actions/setup-java@v3
         with:
           java-version: 11
           distribution: 'temurin'
 
-      # Node pour le front
-      - name: Set up Node.js
-        uses: actions/setup-node@v5
+      - name: Cache Maven
+        uses: actions/cache@v3
         with:
-          node-version: 18
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
 
-      - name: Install Sonar Scanner CLI
-        run: npm install -g sonarqube-scanner
-
-      - name: Run SonarCloud Scan
+      - name: Build and analyze with SonarCloud
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: sonar-scanner \
+        run: mvn clean verify sonar:sonar \
+          -Dsonar.projectKey=Nesesan_Projet_OC10 \
+          -Dsonar.organization=nesesan \
           -Dsonar.login=${{ secrets.SONAR_TOKEN }}
