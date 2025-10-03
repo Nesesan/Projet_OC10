@@ -127,5 +127,8 @@ jobs:
       - name: Run SonarCloud Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B -f back/pom.xml clean verify sonar:sonar \
-          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+        run: |
+          mvn -B -f back/pom.xml clean verify sonar:sonar \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+       
+     
