@@ -35,6 +35,9 @@ jobs:
         run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadless
         working-directory: ./front
 
+      - name: Debug front coverage
+        run: ls -R front/coverage/bobapp
+
       # -------------------------------
       # Setup Java
       # -------------------------------
@@ -49,6 +52,13 @@ jobs:
       - name: Run back-end tests + Jacoco
         run: mvn test jacoco:report
         working-directory: ./back
+
+      - name: Build back-end (required for Sonar)
+        run: mvn -B clean verify
+        working-directory: ./back
+
+      - name: Debug back binaries
+        run: ls -R back/target/classes
 
       # -------------------------------
       # Install Sonar Scanner
