@@ -1,0 +1,49 @@
+name: Tests + Quality Pipeline
+
+on:
+  workflow_run:
+    workflows: ["CI/CD Build"]
+    types:
+      - completed
+
+jobs:
+  sonar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 18
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies (Front)
+        run: npm ci
+        working-directory: ./front
+
+      - name: Run front-end tests + coverage
+        run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadless
+        working-directory: ./front
+
+      - name: Run back-end tests + coverage
+        run: mvn test jacoco:report
+        working-directory: ./back
+
+      - name: Build back-end
+        run: mvn -B clean verify
+        working-directory: ./back
+
+      - name: Install Sonar Scanner
+        run: npm install -g sonar-scanner
+
+      - name: Run SonarCloud Analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: sonar-scanner

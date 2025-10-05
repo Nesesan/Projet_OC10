@@ -2,7 +2,7 @@ name: Docker Pipeline
 
 on:
   workflow_run:
-    workflows: ["Code Quality Pipeline"]
+    workflows: ["Tests + Quality Pipeline"]
     types:
       - completed
 
