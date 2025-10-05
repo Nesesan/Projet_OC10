@@ -72,7 +72,7 @@ jobs:
             -Dsonar.tests=front/src,back/src/test/java \
             -Dsonar.test.inclusions=**/*.spec.ts,**/*Test.java \
             -Dsonar.exclusions=**/node_modules/** \
-            -Dsonar.javascript.lcov.reportPaths=front/coverage/lcov.info \
+            -Dsonar.javascript.lcov.reportPaths=front/coverage/bobapp/lcov.info
             -Dsonar.java.binaries=back/target/classes \
             -Dsonar.java.coveragePlugin=jacoco \
             -Dsonar.coverage.jacoco.xmlReportPaths=back/target/site/jacoco/jacoco.xml
