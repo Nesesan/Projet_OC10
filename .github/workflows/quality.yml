@@ -14,21 +14,32 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Setup Java 17
         uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: 17
+
       - name: Setup Node.js 18
         uses: actions/setup-node@v5
         with:
           node-version: 18
+
       - name: Install Sonar Scanner
         run: npm install -g sonar-scanner
+
       - name: Build backend before Sonar analysis
         run: mvn -B clean verify
         working-directory: ./back
+
+      - name: Download front-end coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: front-end-coverage
+          path: ./front/coverage
+
       - name: Run SonarCloud Analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: sonar-scanner -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+        run: sonar-scanner
