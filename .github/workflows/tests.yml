@@ -1,0 +1,60 @@
+name: Tests Pipeline
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+  workflow_dispatch:
+
+jobs:
+  front-end-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v5
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./front
+
+      - name: Run tests + coverage
+        run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadless
+        working-directory: ./front
+
+      - name: Upload front-end coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: front-end-coverage
+          path: ./front/coverage
+
+  back-end-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java 11
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 11
+
+      - name: Run tests
+        run: mvn test
+        working-directory: ./back
+
+      - name: Generate JaCoCo coverage report
+        run: mvn jacoco:report
+        working-directory: ./back
+
+      - name: Upload back-end coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: back-end-coverage
+          path: ./back/target/site/jacoco
