@@ -18,7 +18,7 @@ jobs:
           fetch-depth: 0
 
       # -------------------------------
-      # Setup Node.js
+      # Setup Node.js (Front-end)
       # -------------------------------
       - uses: actions/setup-node@v5
         with:
@@ -36,10 +36,10 @@ jobs:
         working-directory: ./front
 
       - name: Debug front coverage
-        run: ls -R front/coverage/bobapp
+        run: cat front/coverage/bobapp/lcov.info
 
       # -------------------------------
-      # Setup Java
+      # Setup Java (Back-end)
       # -------------------------------
       - uses: actions/setup-java@v3
         with:
@@ -47,18 +47,24 @@ jobs:
           java-version: 17
 
       # -------------------------------
-      # Back-end tests + Jacoco
+      # Build Back-end
       # -------------------------------
-      - name: Run back-end tests + Jacoco
-        run: mvn test jacoco:report
-        working-directory: ./back
-
-      - name: Build back-end (required for Sonar)
+      - name: Build back-end
         run: mvn -B clean verify
         working-directory: ./back
 
       - name: Debug back binaries
         run: ls -R back/target/classes
+
+      # -------------------------------
+      # Back-end tests + Jacoco coverage
+      # -------------------------------
+      - name: Run back-end tests + Jacoco
+        run: mvn test jacoco:report
+        working-directory: ./back
+
+      - name: Debug back coverage
+        run: ls -R back/target/site/jacoco
 
       # -------------------------------
       # Install Sonar Scanner
