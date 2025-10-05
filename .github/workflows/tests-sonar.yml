@@ -10,17 +10,13 @@ jobs:
   tests-and-sonar:
     runs-on: ubuntu-latest
     steps:
-      # Checkout repo
+      # Checkout
       - uses: actions/checkout@v4
 
-      # Setup environments
+      # Setup Node.js
       - uses: actions/setup-node@v5
         with:
           node-version: 18
-      - uses: actions/setup-java@v3
-        with:
-          distribution: temurin
-          java-version: 17
 
       # Front-end tests
       - run: npm ci
@@ -28,12 +24,14 @@ jobs:
       - run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadless
         working-directory: ./front
 
+      # Setup Java
+      - uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+
       # Back-end tests + Jacoco
       - run: mvn test jacoco:report
-        working-directory: ./back
-
-      # Build back-end (nécessaire pour Sonar)
-      - run: mvn -B clean verify
         working-directory: ./back
 
       # Install Sonar Scanner
@@ -42,4 +40,4 @@ jobs:
       # Run SonarCloud Analysis
       - env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: sonar-scanner
+        run: sonar-scanner -Dsonar.login=${{ secrets.SONAR_TOKEN }}
