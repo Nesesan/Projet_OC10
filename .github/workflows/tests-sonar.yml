@@ -1,4 +1,4 @@
-name: Tests + Quality Pipeline
+name: Tests-sonar-pipeline
 
 on:
   workflow_run:
