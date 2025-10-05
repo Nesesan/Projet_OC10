@@ -110,6 +110,18 @@ jobs:
         with:
           node-version: 18
 
+      - uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('back/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Build backend before Sonar
+        run: |
+          cd back
+          mvn -B clean verify
+          cd ..
+
       - name: Install Sonar Scanner
         run: npm install -g sonar-scanner
 
@@ -118,6 +130,6 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           sonar-scanner \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+            -Dsonar.token=${{ secrets.SONAR_TOKEN }}
        
      
