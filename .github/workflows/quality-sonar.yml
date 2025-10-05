@@ -1,0 +1,43 @@
+name: Quality Pipeline
+
+on:
+  workflow_run:
+    workflows: ["Tests Pipeline"]
+    types:
+      - completed
+
+jobs:
+  sonar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Setup Node.js et Java
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 18
+      - uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # Télécharger les coverage générés par le workflow Tests
+      - uses: actions/download-artifact@v4
+        with:
+          name: front-end-coverage
+          path: ./front/coverage
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: back-end-coverage
+          path: ./back/target/site/jacoco
+
+      # Installer Sonar Scanner
+      - run: npm install -g sonar-scanner
+
+      # Exécuter l’analyse SonarCloud
+      - env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: sonar-scanner -Dsonar.login=${{ secrets.SONAR_TOKEN }}
