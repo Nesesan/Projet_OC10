@@ -9,17 +9,31 @@ on:
 jobs:
   tests-and-sonar:
     runs-on: ubuntu-latest
-
     steps:
       # -------------------------------
-      # Checkout repository
+      # Checkout code
       # -------------------------------
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       # -------------------------------
-      # Setup Node.js (Front-end)
+      # Download builds
+      # -------------------------------
+      - name: Download front build
+        uses: actions/download-artifact@v4
+        with:
+          name: front-build
+          path: ./front
+
+      - name: Download back build
+        uses: actions/download-artifact@v4
+        with:
+          name: back-build
+          path: ./back/target
+
+      # -------------------------------
+      # Setup Node.js
       # -------------------------------
       - uses: actions/setup-node@v5
         with:
@@ -32,15 +46,15 @@ jobs:
         run: npm ci
         working-directory: ./front
 
-      - name: Run front-end tests with coverage
+      - name: Run front tests with coverage
         run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadless
         working-directory: ./front
 
       - name: Debug front coverage
-        run: ls -lah front/coverage/bobapp || echo "Pas de coverage front"
+        run: ls -lah front/coverage/bobapp
 
       # -------------------------------
-      # Setup Java (Back-end)
+      # Setup Java
       # -------------------------------
       - uses: actions/setup-java@v3
         with:
@@ -48,29 +62,14 @@ jobs:
           java-version: 17
 
       # -------------------------------
-      # Build + Tests Back-end (Jacoco)
+      # Back-end tests + Jacoco
       # -------------------------------
       - name: Run back-end tests + Jacoco
         run: mvn clean verify jacoco:report
         working-directory: ./back
 
       - name: Debug back coverage
-        run: ls -lah back/target/site/jacoco || echo "Pas de coverage back"
-
-      # -------------------------------
-      # Upload coverage artifacts
-      # -------------------------------
-      - name: Upload Front Coverage Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: front-coverage-report
-          path: front/coverage/bobapp/
-
-      - name: Upload Back Coverage Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: back-jacoco-report
-          path: back/target/site/jacoco/
+        run: ls -lah back/target/site/jacoco
 
       # -------------------------------
       # Install Sonar Scanner
@@ -81,16 +80,20 @@ jobs:
       # -------------------------------
       # Run SonarCloud Analysis
       # -------------------------------
-
-      - name: Debug front coverage path
-        run: find . -type f -name "lcov.info"
-
       - name: SonarCloud Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          echo "=== Contenu du dossier target/classes ==="
-          ls -lah back/target/classes || echo "Pas trouvé !"
-          echo "=== Contenu du dossier jacoco ==="
-          ls -lah back/target/site/jacoco || echo "Pas trouvé !"
-          sonar-scanner -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+          sonar-scanner \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.projectKey=Nesesan_Projet_OC10 \
+            -Dsonar.organization=nesesan \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.sources=front/src,back/src/main/java \
+            -Dsonar.tests=front/src,back/src/test/java \
+            -Dsonar.test.inclusions=**/*.spec.ts,**/*Test.java \
+            -Dsonar.exclusions=**/node_modules/** \
+            -Dsonar.javascript.lcov.reportPaths=front/coverage/bobapp/lcov.info \
+            -Dsonar.java.binaries=back/target/classes \
+            -Dsonar.java.coveragePlugin=jacoco \
+            -Dsonar.coverage.jacoco.xmlReportPaths=back/target/site/jacoco/jacoco.xml
