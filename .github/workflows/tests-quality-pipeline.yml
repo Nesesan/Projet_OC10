@@ -11,23 +11,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # -------------------------------
+
       # Checkout repository
-      # -------------------------------
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # -------------------------------
+
       # Setup Node.js (Front-end)
-      # -------------------------------
+
       - uses: actions/setup-node@v5
         with:
           node-version: 18
 
-      # -------------------------------
+
       # Front-end tests + coverage
-      # -------------------------------
+
       - name: Install front dependencies
         run: npm ci
         working-directory: ./front
@@ -39,17 +39,17 @@ jobs:
       - name: Debug front coverage
         run: ls -lah front/coverage/bobapp || echo "Pas de coverage front"
 
-      # -------------------------------
+
       # Setup Java (Back-end)
-      # -------------------------------
+
       - uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: 17
 
-      # -------------------------------
+
       # Build + Tests Back-end (Jacoco)
-      # -------------------------------
+
       - name: Run back-end tests + Jacoco
         run: mvn clean verify jacoco:report
         working-directory: ./back
@@ -57,9 +57,9 @@ jobs:
       - name: Debug back coverage
         run: ls -lah back/target/site/jacoco || echo "Pas de coverage back"
 
-      # -------------------------------
+
       # Upload coverage artifacts
-      # -------------------------------
+
       - name: Upload Front Coverage Report
         uses: actions/upload-artifact@v4
         with:
@@ -72,15 +72,15 @@ jobs:
           name: back-jacoco-report
           path: back/target/site/jacoco/
 
-      # -------------------------------
+
       # Install Sonar Scanner
-      # -------------------------------
+
       - name: Install Sonar Scanner
         run: npm install -g sonar-scanner
 
-      # -------------------------------
+
       # Run SonarCloud Analysis
-      # -------------------------------
+
 
       - name: Debug front coverage path
         run: find . -type f -name "lcov.info"
