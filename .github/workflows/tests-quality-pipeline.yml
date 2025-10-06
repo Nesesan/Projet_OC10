@@ -9,19 +9,21 @@ on:
 jobs:
   tests-and-sonar:
     runs-on: ubuntu-latest
-
     steps:
+
 
       # Checkout repository
 
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
 
       # Setup Node.js (Front-end)
 
-      - uses: actions/setup-node@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
         with:
           node-version: 18
 
@@ -37,12 +39,16 @@ jobs:
         working-directory: ./front
 
       - name: Debug front coverage
-        run: ls -lah front/coverage/bobapp || echo "Pas de coverage front"
+        run: |
+          echo "=== Front coverage files ==="
+          ls -lah front/coverage/bobapp
+          cat front/coverage/bobapp/lcov.info
 
 
       # Setup Java (Back-end)
 
-      - uses: actions/setup-java@v3
+      - name: Setup Java
+        uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: 17
@@ -55,7 +61,10 @@ jobs:
         working-directory: ./back
 
       - name: Debug back coverage
-        run: ls -lah back/target/site/jacoco || echo "Pas de coverage back"
+        run: |
+          echo "=== Back coverage files ==="
+          ls -lah back/target/site/jacoco
+          cat back/target/site/jacoco/jacoco.xml
 
 
       # Upload coverage artifacts
@@ -81,16 +90,11 @@ jobs:
 
       # Run SonarCloud Analysis
 
-
-      - name: Debug front coverage path
-        run: find . -type f -name "lcov.info"
-
       - name: SonarCloud Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          echo "=== Contenu du dossier target/classes ==="
-          ls -lah back/target/classes || echo "Pas trouvé !"
-          echo "=== Contenu du dossier jacoco ==="
-          ls -lah back/target/site/jacoco || echo "Pas trouvé !"
-          sonar-scanner -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+          echo "=== Debug directories before Sonar scan ==="
+          ls -lah front/coverage/bobapp
+          ls -lah back/target/site/jacoco
+          sonar-scanner -Dsonar.login=${{ secrets.SONAR_TOKEN }} -Dproject.settings=sonar-project.properties
