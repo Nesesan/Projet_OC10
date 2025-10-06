@@ -10,56 +10,79 @@ jobs:
   tests-and-sonar:
     runs-on: ubuntu-latest
     steps:
-      # -------------------------------
-      # Checkout repository
-      # -------------------------------
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # -------------------------------
-      # Setup Node.js (Front)
-      # -------------------------------
-      - uses: actions/setup-node@v5
+      # --- Front tests & coverage ---
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
         with:
           node-version: 18
 
-      - name: Install front dependencies
+      - name: Install front deps
         run: npm ci
         working-directory: ./front
 
-      - name: Run front-end tests with coverage
+      - name: Run front tests (coverage)
         run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadless
         working-directory: ./front
 
       - name: Debug front coverage
-        run: ls -lah front/coverage/bobapp || echo "Pas de coverage front"
+        run: |
+          echo "---- front coverage list ----"
+          ls -R front/coverage || true
+          find front -name "lcov.info" -print || true
 
-      # -------------------------------
-      # Setup Java (Back)
-      # -------------------------------
-      - uses: actions/setup-java@v3
+      # --- Back tests & jacoco ---
+      - name: Setup Java
+        uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: 17
 
-      - name: Run back-end tests + Jacoco
+      - name: Run back tests + jacoco report
         run: mvn clean verify jacoco:report
         working-directory: ./back
 
-      - name: Debug back coverage
-        run: ls -lah back/target/site/jacoco || echo "Pas de coverage back"
+      - name: Debug back jacoco
+        run: |
+          echo "---- back jacoco ----"
+          ls -lah back/target/site/jacoco || true
+          [ -f back/target/site/jacoco/jacoco.xml ] && head -n 30 back/target/site/jacoco/jacoco.xml || echo "no jacoco.xml"
 
-      # -------------------------------
-      # Install Sonar Scanner
-      # -------------------------------
+      # --- Install sonar scanner ---
       - name: Install Sonar Scanner
         run: npm install -g sonar-scanner
 
-      # -------------------------------
-      # Run SonarCloud Scan
-      # -------------------------------
       - name: SonarCloud Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: sonar-scanner -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
+      # ---------- IMPORTANT: build outputs for Docker ----------
+      # We rebuild/package the apps in this workflow so we can upload artifacts
+      # that Docker workflow (triggered after this job) can download.
+
+      - name: Build front for Docker (produce ./front/dist)
+        run: |
+          npm ci
+          npm run build
+        working-directory: ./front
+
+      - name: Upload front-build for Docker
+        uses: actions/upload-artifact@v4
+        with:
+          name: front-build
+          path: ./front/dist
+
+      - name: Build back for Docker (package)
+        run: mvn -B -DskipTests package
+        working-directory: ./back
+
+      - name: Upload back-build for Docker
+        uses: actions/upload-artifact@v4
+        with:
+          name: back-build
+          path: ./back/target
