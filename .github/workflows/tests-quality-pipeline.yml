@@ -9,17 +9,25 @@ on:
 jobs:
   tests-and-sonar:
     runs-on: ubuntu-latest
+
     steps:
-      # 1️⃣ Checkout
+      # -------------------------------
+      # Checkout repository
+      # -------------------------------
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 2️⃣ FRONT-END tests + coverage
+      # -------------------------------
+      # Setup Node.js (Front-end)
+      # -------------------------------
       - uses: actions/setup-node@v5
         with:
           node-version: 18
 
+      # -------------------------------
+      # Front-end tests + coverage
+      # -------------------------------
       - name: Install front dependencies
         run: npm ci
         working-directory: ./front
@@ -28,66 +36,61 @@ jobs:
         run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadless
         working-directory: ./front
 
-      - name: Debug coverage file
-        run: find front -name "lcov.info" -print
+      - name: Debug front coverage
+        run: ls -lah front/coverage/bobapp || echo "Pas de coverage front"
 
-      # 3️⃣ BACK-END tests + Jacoco
+      # -------------------------------
+      # Setup Java (Back-end)
+      # -------------------------------
       - uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: 17
 
-      - name: Run backend tests with Jacoco
+      # -------------------------------
+      # Build + Tests Back-end (Jacoco)
+      # -------------------------------
+      - name: Run back-end tests + Jacoco
         run: mvn clean verify jacoco:report
         working-directory: ./back
 
-      - name: Debug Jacoco
-        run: find back -name "jacoco.xml" -print
+      - name: Debug back coverage
+        run: ls -lah back/target/site/jacoco || echo "Pas de coverage back"
 
-      # 4️⃣ SonarCloud Analysis
+      # -------------------------------
+      # Upload coverage artifacts
+      # -------------------------------
+      - name: Upload Front Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: front-coverage-report
+          path: front/coverage/bobapp/
+
+      - name: Upload Back Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: back-jacoco-report
+          path: back/target/site/jacoco/
+
+      # -------------------------------
+      # Install Sonar Scanner
+      # -------------------------------
       - name: Install Sonar Scanner
         run: npm install -g sonar-scanner
 
-      - name: Inspect lcov file before Sonar
-        run: |
-          echo "=== Vérif du fichier lcov.info ==="
-          ls -lh front/coverage/bobapp/lcov.info || echo "Pas trouvé"
-          echo "=== Nombre de lignes ==="
-          wc -l front/coverage/bobapp/lcov.info || true
-          echo "=== Extrait (10 premières lignes) ==="
-          head -n 10 front/coverage/bobapp/lcov.info || true
-      
+      # -------------------------------
+      # Run SonarCloud Analysis
+      # -------------------------------
 
-      - name: Run SonarCloud
+      - name: Debug front coverage path
+        run: find . -type f -name "lcov.info"
+
+      - name: SonarCloud Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: sonar-scanner -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-
-      # -------------------------------
-      # Re-upload artifacts for Docker
-      # -------------------------------
-      - name: Download front build from CI/CD
-        uses: actions/download-artifact@v4
-        with:
-          name: front-build
-          path: ./front/dist
-
-      - name: Download back build from CI/CD
-        uses: actions/download-artifact@v4
-        with:
-          name: back-build
-          path: ./back/target
-
-      - name: Re-upload front build for Docker
-        uses: actions/upload-artifact@v4
-        with:
-          name: front-build
-          path: ./front/dist
-          retention-days: 2
-
-      - name: Re-upload back build for Docker
-        uses: actions/upload-artifact@v4
-        with:
-          name: back-build
-          path: ./back/target
-          retention-days: 2
+        run: |
+          echo "=== Contenu du dossier target/classes ==="
+          ls -lah back/target/classes || echo "Pas trouvé !"
+          echo "=== Contenu du dossier jacoco ==="
+          ls -lah back/target/site/jacoco || echo "Pas trouvé !"
+          sonar-scanner -Dsonar.login=${{ secrets.SONAR_TOKEN }}
