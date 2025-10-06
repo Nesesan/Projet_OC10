@@ -10,40 +10,55 @@ jobs:
   tests-and-sonar:
     runs-on: ubuntu-latest
     steps:
-      # Checkout code
+      # -------------------------------
+      # Checkout repository
+      # -------------------------------
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # ---------------- Front-end ----------------
+      # -------------------------------
+      # Setup Node.js (Front)
+      # -------------------------------
       - uses: actions/setup-node@v5
         with:
           node-version: 18
-      - run: npm ci
-        working-directory: ./front
-      - run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadless
-        working-directory: ./front
-      - name: Upload front coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: front-coverage
-          path: ./front/coverage/bobapp
 
-      # ---------------- Back-end ----------------
+      - name: Install front dependencies
+        run: npm ci
+        working-directory: ./front
+
+      - name: Run front-end tests with coverage
+        run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadless
+        working-directory: ./front
+
+      - name: Debug front coverage
+        run: ls -lah front/coverage/bobapp || echo "Pas de coverage front"
+
+      # -------------------------------
+      # Setup Java (Back)
+      # -------------------------------
       - uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: 17
-      - run: mvn clean verify jacoco:report
-        working-directory: ./back
-      - name: Upload back coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: back-coverage
-          path: ./back/target/site/jacoco
 
-      # ---------------- SonarCloud ----------------
-      - run: npm install -g sonar-scanner
+      - name: Run back-end tests + Jacoco
+        run: mvn clean verify jacoco:report
+        working-directory: ./back
+
+      - name: Debug back coverage
+        run: ls -lah back/target/site/jacoco || echo "Pas de coverage back"
+
+      # -------------------------------
+      # Install Sonar Scanner
+      # -------------------------------
+      - name: Install Sonar Scanner
+        run: npm install -g sonar-scanner
+
+      # -------------------------------
+      # Run SonarCloud Scan
+      # -------------------------------
       - name: SonarCloud Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

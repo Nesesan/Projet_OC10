@@ -13,9 +13,11 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 18
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
         working-directory: ./front
-      - run: npm run build
+      - name: Build Angular app
+        run: npm run build
         working-directory: ./front
       - name: Upload front build
         uses: actions/upload-artifact@v4
@@ -30,8 +32,9 @@ jobs:
       - uses: actions/setup-java@v3
         with:
           distribution: temurin
-          java-version: 11
-      - run: mvn -B clean verify
+          java-version: 17
+      - name: Build Spring Boot
+        run: mvn -B clean verify
         working-directory: ./back
       - name: Upload back build
         uses: actions/upload-artifact@v4
