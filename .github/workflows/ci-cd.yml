@@ -1,0 +1,91 @@
+name: CI/CD Full Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build-test-sonar-docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      # -------------------------------
+      # Checkout repository
+      # -------------------------------
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # -------------------------------
+      # Setup Node.js (Front-end)
+      # -------------------------------
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 18
+
+      # -------------------------------
+      # FRONT-END: Install & test
+      # -------------------------------
+      - name: Install front dependencies
+        run: npm ci
+        working-directory: ./front
+
+      - name: Run front-end tests with coverage
+        run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadless
+        working-directory: ./front
+
+      - name: Debug front coverage
+        run: ls -R front/coverage/bobapp || echo "No front coverage found"
+
+      # -------------------------------
+      # Setup Java (Back-end)
+      # -------------------------------
+      - uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # -------------------------------
+      # BACK-END: Build + Tests + Jacoco
+      # -------------------------------
+      - name: Build & test back-end with coverage
+        run: mvn -B clean verify jacoco:report
+        working-directory: ./back
+
+      - name: Debug back coverage
+        run: ls -R back/target/site/jacoco || echo "No back coverage found"
+
+      # -------------------------------
+      # Install Sonar Scanner
+      # -------------------------------
+      - name: Install Sonar Scanner
+        run: npm install -g sonar-scanner
+
+      # -------------------------------
+      # SonarCloud Analysis
+      # -------------------------------
+      - name: SonarCloud Scan
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: sonar-scanner -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
+      # -------------------------------
+      # Docker Build & Push
+      # -------------------------------
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/bobapp:latest
