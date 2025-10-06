@@ -10,79 +10,77 @@ jobs:
   tests-and-sonar:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      # 1️⃣ Checkout
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # --- Front tests & coverage ---
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
+      # 2️⃣ FRONT-END tests + coverage
+      - uses: actions/setup-node@v5
         with:
           node-version: 18
 
-      - name: Install front deps
+      - name: Install front dependencies
         run: npm ci
         working-directory: ./front
 
-      - name: Run front tests (coverage)
+      - name: Run front-end tests with coverage
         run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadless
         working-directory: ./front
 
-      - name: Debug front coverage
-        run: |
-          echo "---- front coverage list ----"
-          ls -R front/coverage || true
-          find front -name "lcov.info" -print || true
+      - name: Debug coverage file
+        run: find front -name "lcov.info" -print
 
-      # --- Back tests & jacoco ---
-      - name: Setup Java
-        uses: actions/setup-java@v3
+      # 3️⃣ BACK-END tests + Jacoco
+      - uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: 17
 
-      - name: Run back tests + jacoco report
+      - name: Run backend tests with Jacoco
         run: mvn clean verify jacoco:report
         working-directory: ./back
 
-      - name: Debug back jacoco
-        run: |
-          echo "---- back jacoco ----"
-          ls -lah back/target/site/jacoco || true
-          [ -f back/target/site/jacoco/jacoco.xml ] && head -n 30 back/target/site/jacoco/jacoco.xml || echo "no jacoco.xml"
+      - name: Debug Jacoco
+        run: find back -name "jacoco.xml" -print
 
-      # --- Install sonar scanner ---
+      # 4️⃣ SonarCloud Analysis
       - name: Install Sonar Scanner
         run: npm install -g sonar-scanner
 
-      - name: SonarCloud Scan
+      - name: Inspect lcov file before Sonar
+        run: |
+          echo "=== Vérif du fichier lcov.info ==="
+          ls -lh front/coverage/bobapp/lcov.info || echo "Pas trouvé"
+          echo "=== Nombre de lignes ==="
+          wc -l front/coverage/bobapp/lcov.info || true
+          echo "=== Extrait (10 premières lignes) ==="
+          head -n 10 front/coverage/bobapp/lcov.info || true
+      
+
+      - name: Run SonarCloud
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: sonar-scanner -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
-      # ---------- IMPORTANT: build outputs for Docker ----------
-      # We rebuild/package the apps in this workflow so we can upload artifacts
-      # that Docker workflow (triggered after this job) can download.
-
-      - name: Build front for Docker (produce ./front/dist)
+      # 5️⃣ Build & Upload artifacts for Docker
+      - name: Build front for Docker
         run: |
-          npm ci
           npm run build
         working-directory: ./front
 
-      - name: Upload front-build for Docker
+      - name: Upload front build
         uses: actions/upload-artifact@v4
         with:
           name: front-build
-          path: ./front/dist
+          path: front/dist
 
-      - name: Build back for Docker (package)
+      - name: Build back for Docker
         run: mvn -B -DskipTests package
         working-directory: ./back
 
-      - name: Upload back-build for Docker
+      - name: Upload back build
         uses: actions/upload-artifact@v4
         with:
           name: back-build
-          path: ./back/target
+          path: back/target
