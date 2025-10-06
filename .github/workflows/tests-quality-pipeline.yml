@@ -63,24 +63,31 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: sonar-scanner -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
-      # 5️⃣ Build & Upload artifacts for Docker
-      - name: Build front for Docker
-        run: |
-          npm run build
-        working-directory: ./front
+      # -------------------------------
+      # Re-upload artifacts for Docker
+      # -------------------------------
+      - name: Download front build from CI/CD
+        uses: actions/download-artifact@v4
+        with:
+          name: front-build
+          path: ./front/dist
 
-      - name: Upload front build
+      - name: Download back build from CI/CD
+        uses: actions/download-artifact@v4
+        with:
+          name: back-build
+          path: ./back/target
+
+      - name: Re-upload front build for Docker
         uses: actions/upload-artifact@v4
         with:
           name: front-build
-          path: front/dist
+          path: ./front/dist
+          retention-days: 2
 
-      - name: Build back for Docker
-        run: mvn -B -DskipTests package
-        working-directory: ./back
-
-      - name: Upload back build
+      - name: Re-upload back build for Docker
         uses: actions/upload-artifact@v4
         with:
           name: back-build
-          path: back/target
+          path: ./back/target
+          retention-days: 2

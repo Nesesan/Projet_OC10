@@ -17,14 +17,26 @@ jobs:
         working-directory: ./front
       - run: npm run build
         working-directory: ./front
+      - name: Upload front build
+        uses: actions/upload-artifact@v4
+        with:
+          name: front-build
+          path: ./front/dist
+          retention-days: 3  # garde l'artefact disponible 3 jours
 
   build-back:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v3
-        with:
-          distribution: temurin
-          java-version: 17
-      - run: mvn -B clean verify
-        working-directory: ./back
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+        - uses: actions/setup-java@v3
+          with:
+            distribution: temurin
+            java-version: 11
+        - run: mvn -B clean verify
+          working-directory: ./back
+        - name: Upload back build
+          uses: actions/upload-artifact@v4
+          with:
+            name: back-build
+            path: ./back/target
+            retention-days: 3  #garde l'artefact disponible 3 jours
