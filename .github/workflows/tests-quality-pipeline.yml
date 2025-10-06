@@ -81,6 +81,10 @@ jobs:
       # -------------------------------
       # Run SonarCloud Analysis
       # -------------------------------
+
+      - name: Debug front coverage path
+        run: find . -type f -name "lcov.info"
+
       - name: SonarCloud Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
