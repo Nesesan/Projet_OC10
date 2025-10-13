@@ -1,0 +1,41 @@
+name:  CI Test
+
+on:
+  push:
+    branches: ["develop","main"]
+  workflow_dispatch:
+
+
+jobs:
+
+  #Front-end tests
+
+  front-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name:  Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 18
+
+      - name: Install front dependencies
+        run: npm ci
+        working-directory: ./front
+
+      - name: Run front-end tests with coverage
+        run: npm run test -- --watch=false --code-coverage --browsers=ChromeHeadless
+        working-directory: ./front
+
+      - name: Upload front coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: front-coverage
+          path: |
+            front/coverage/bobapp/lcov.info
+            front/coverage/bobapp/index.html
+            front/coverage/bobapp
