@@ -40,12 +40,6 @@ jobs:
             front/coverage/bobapp/index.html
             front/coverage/bobapp
 
-      - name: Download front coverage artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: front-coverage
-          path: front/coverage/bobapp/
-
   #Back-end tests
 
   back-tests:
@@ -74,15 +68,5 @@ jobs:
               back/target/site/jacoco/jacoco.xml
               back/target/site/jacoco/index.html
               back/target/site/jacoco
-
-        - name: Upload back compiled classes
-          uses: actions/upload-artifact@v4
-          with:
-            name: back-classes
-            path: back/target/classes
-
-        - name: Download back coverage artifacts
-          uses: actions/download-artifact@v4
-          with:
-            name: back-coverage
-            path: back/target/site/jacoco/
+              
+            
