@@ -1,4 +1,4 @@
-name:  CI Tests
+name:  CI Tests and Sonar
 
 on:
   push:
@@ -70,3 +70,54 @@ jobs:
               back/target/site/jacoco
               
             
+  # SONAR ANALYSIS
+
+  sonar-analysis:
+    runs-on: ubuntu-latest
+    needs: [ front-tests, back-tests ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download front coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: front-coverage
+          path: front/coverage/bobapp/
+
+      - name: Download back coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: back-coverage
+          path: back/target/site/jacoco/
+
+      - name: Download back compiled classes
+        uses: actions/download-artifact@v4
+        with:
+          name: back-classes
+          path: back/target/classes
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 18
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install Sonar Scanner
+        run: npm install -g sonar-scanner
+
+      - name: Run SonarCloud Analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          sonar-scanner \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+            -Dproject.settings=sonar-project.properties \
+            -Dsonar.verbose=true
