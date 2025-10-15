@@ -68,6 +68,12 @@ jobs:
               back/target/site/jacoco/jacoco.xml
               back/target/site/jacoco/index.html
               back/target/site/jacoco
+
+        - name: Upload back compiled classes
+          uses: actions/upload-artifact@v4
+          with:
+            name: back-classes
+            path: back/target/classes
               
             
   # SONAR ANALYSIS
@@ -92,6 +98,12 @@ jobs:
         with:
           name: back-coverage
           path: back/target/site/jacoco/
+
+      - name: Download back compiled classes
+        uses: actions/download-artifact@v4
+        with:
+          name: back-classes
+          path: back/target/classes
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
