@@ -1,4 +1,4 @@
-name:  CI Test
+name:  CI Tests
 
 on:
   push:
@@ -39,3 +39,50 @@ jobs:
             front/coverage/bobapp/lcov.info
             front/coverage/bobapp/index.html
             front/coverage/bobapp
+
+      - name: Download front coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: front-coverage
+          path: front/coverage/bobapp/
+
+  #Back-end tests
+
+  back-tests:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+
+        - name: Setup Java
+          uses: actions/setup-java@v3
+          with:
+            distribution: temurin
+            java-version: 17
+
+        - name: Run back-end tests + Jacoco
+          run: mvn clean verify jacoco:report
+          working-directory: ./back
+
+        - name: Upload back coverage artifacts
+          uses: actions/upload-artifact@v4
+          with:
+            name: back-coverage
+            path: |
+              back/target/site/jacoco/jacoco.xml
+              back/target/site/jacoco/index.html
+              back/target/site/jacoco
+
+        - name: Upload back compiled classes
+          uses: actions/upload-artifact@v4
+          with:
+            name: back-classes
+            path: back/target/classes
+
+        - name: Download back coverage artifacts
+          uses: actions/download-artifact@v4
+          with:
+            name: back-coverage
+            path: back/target/site/jacoco/
