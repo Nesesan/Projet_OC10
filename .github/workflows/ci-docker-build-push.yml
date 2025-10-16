@@ -5,7 +5,7 @@ on:
     workflows: ["CI Tests and Sonar"]
     types:
       - completed
-    branche:
+    branches:
       - main
 
 jobs:
