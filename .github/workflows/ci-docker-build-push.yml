@@ -5,10 +5,12 @@ on:
     workflows: ["CI Tests and Sonar"]
     types:
       - completed
+    branche:
+      - main
 
 jobs:
   #Login Docker
-  login:
+  login_docker:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
@@ -20,8 +22,8 @@ jobs:
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
   #Build/push frontend
-  build_front:
-    needs: login
+  build_front_and_push:
+    needs: login_docker
     runs-on: ubuntu-latest
 
     steps:
@@ -40,8 +42,8 @@ jobs:
           docker push "${{ secrets.DOCKER_USERNAME }}/bobapp-front:latest"
 
   #Build/Push backend
-  build_back:
-    needs: login
+  build_back_and_push:
+    needs: login_docker
     runs-on: ubuntu-latest
 
     steps:
