@@ -1,38 +1,37 @@
 name: Docker Build and Push
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  workflow_dispatch:
+  workflow_run:
+    workflows: ["CI Tests and Sonar"]
+    types:
+      - completed
+    branches:
+      - main
 
 jobs:
-
-
-  # Login Docker
+  #Login Docker
   login_docker:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    outputs:
-      docker_logged_in: ${{ steps.login.outputs.success }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Log in to Docker Hub
-        id: login
-        run: |
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-          echo "success=true" >> $GITHUB_OUTPUT
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-
-  # Build & push Front image
+  #Build/push frontend
   build_front_and_push:
     needs: login_docker
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
       - name: Build & push Front image
         run: |
@@ -42,14 +41,17 @@ jobs:
           docker push "${{ secrets.DOCKER_USERNAME }}/bobapp-front:${{ github.sha }}"
           docker push "${{ secrets.DOCKER_USERNAME }}/bobapp-front:latest"
 
-
-  # Build & push Back image
+  #Build/Push backend
   build_back_and_push:
     needs: login_docker
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
       - name: Build & push Back image
         run: |
