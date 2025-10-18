@@ -1,25 +1,23 @@
-name:  CI Tests and Sonar
+name: CI Tests and Sonar
 
 on:
   push:
-    branches: ["develop", "main"]
+    branches: [ "develop" ]
   pull_request:
-    branches: ["main"]
+    branches: [ "main" ]
   workflow_dispatch:
 
 concurrency:
   group: sonar-${{ github.ref }}
   cancel-in-progress: true
 
-
 jobs:
 
-  #Front-end tests
-
+  # Front-end tests
   front-tests:
     runs-on: ubuntu-latest
     steps:
-      - name:  Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -46,44 +44,41 @@ jobs:
             front/coverage/bobapp/index.html
             front/coverage/bobapp
 
-  #Back-end tests
-
+  # Back-end tests
   back-tests:
-      runs-on: ubuntu-latest
-      steps:
-        - name: Checkout repository
-          uses: actions/checkout@v4
-          with:
-            fetch-depth: 0
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-        - name: Setup Java
-          uses: actions/setup-java@v3
-          with:
-            distribution: temurin
-            java-version: 17
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
 
-        - name: Run back-end tests + Jacoco
-          run: mvn clean verify jacoco:report
-          working-directory: ./back
+      - name: Run back-end tests + Jacoco
+        run: mvn clean verify jacoco:report
+        working-directory: ./back
 
-        - name: Upload back coverage artifacts
-          uses: actions/upload-artifact@v4
-          with:
-            name: back-coverage
-            path: |
-              back/target/site/jacoco/jacoco.xml
-              back/target/site/jacoco/index.html
-              back/target/site/jacoco
+      - name: Upload back coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: back-coverage
+          path: |
+            back/target/site/jacoco/jacoco.xml
+            back/target/site/jacoco/index.html
+            back/target/site/jacoco
 
-        - name: Upload back compiled classes
-          uses: actions/upload-artifact@v4
-          with:
-            name: back-classes
-            path: back/target/classes
-              
-            
-  # SONAR ANALYSIS
+      - name: Upload back compiled classes
+        uses: actions/upload-artifact@v4
+        with:
+          name: back-classes
+          path: back/target/classes
 
+  # Sonar Analysis
   sonar-analysis:
     runs-on: ubuntu-latest
     needs: [ front-tests, back-tests ]
